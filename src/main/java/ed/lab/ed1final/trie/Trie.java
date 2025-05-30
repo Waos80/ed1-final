@@ -4,91 +4,77 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class Trie {
-    public boolean isEnd;
-    public char val;
-    public int count;
-    public Trie[] children;
+    private static class TrieNode {
+        public TrieNode[] children = new TrieNode[26];
+        public int wordCount = 0;
+        public int prefixCount = 0;
+    }
+    public final TrieNode root;
 
     public Trie() {
-        this.isEnd = false;
-        this.val = ' ';
-        this.count = 0;
-        this.children = new Trie[26];
+        this.root = new TrieNode();
     }
 
     public void insert(String word) {
-        Trie current = this;
-        int length = 0;
-        for (char ch : word.toCharArray()) {
-            int idx = ch - 'a';
-            if (idx > 25) {
-                throw new IllegalArgumentException();
+        TrieNode current = root;
+        for (char c : word.toCharArray()) {
+            int idx = c - 'a';
+            if (current.children[idx] == null) {
+                current.children[idx] = new TrieNode();
             }
 
-            if (word.length() == length && current.isEnd) {
-                current.count++;
-                return;
-            }
-
-            if (current.children[idx] != null) {
-                current = current.children[idx];
-            } else {
-                current.children[idx] = new Trie();
-                current = current.children[idx];
-                current.val = ch;
-            }
-            length++;
+            current = current.children[idx];
+            current.prefixCount++;
         }
-        current.isEnd = true;
-        current.count = 1;
+        current.wordCount++;
     }
 
     public int countWordsEqualTo(String word) {
-        Trie current = this;
+        TrieNode current = root;
         for (char ch : word.toCharArray()) {
             int idx = ch - 'a';
-            if (idx > 25) {
-                throw new IllegalArgumentException();
-            }
             if (current.children[idx] == null) {
                 return 0;
-            } else {
-                current = current.children[idx];
             }
+            current = current.children[idx];
         }
-        if (!current.isEnd) {
-            return 0;
-        }
-        return current.count;
+        return current.wordCount;
     }
 
     public int countWordsStartingWith(String prefix) {
-        Trie current = this;
+        TrieNode current = root;
         for (char ch : prefix.toCharArray()) {
             int idx = ch - 'a';
-            if (idx > 25) {
-                throw new IllegalArgumentException();
-            }
             if (current.children[idx] == null) {
                 return 0;
-            } else {
-                current = current.children[idx];
             }
+            current = current.children[idx];
         }
-        int count = 0;
-        if (current.isEnd) {
-            count += current.count;
-        }
-
-        for (Trie child : current.children) {
-            if (child != null) {
-
-            }
-        }
-        return -1;
+        return current.prefixCount;
     }
 
     public void erase(String word) {
+        if (!exists(word)) return;
 
+        TrieNode current = root;
+        for (char ch : word.toCharArray()) {
+            int idx = ch - 'a';
+            TrieNode next = current.children[idx];
+            next.prefixCount--;
+            current = next;
+        }
+        current.wordCount--;
+    }
+
+    public boolean exists(String word) {
+        TrieNode current = root;
+        for (char ch : word.toCharArray()) {
+            int idx = ch - 'a';
+            if (current.children[idx] == null) {
+                return false;
+            }
+            current = current.children[idx];
+        }
+        return current.wordCount > 0;
     }
 }
